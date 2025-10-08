@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>A-One - Admin Portal</title>
+    <meta name="theme-color" content="#10101a">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #10101a;
+            --card-bg: #19192c;
+            --primary-accent: #00aaff;
+            --text-primary: #e0e0e0;
+            --text-secondary: #8a8a9e;
+            --success: #00d1b2;
+            --danger: #ff3860;
+            --border-light: rgba(255, 255, 255, 0.1);
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { font-size: 16px; scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            padding: 1.5rem 1rem;
+            overflow-x: hidden;
+        }
+
+        /* --- Attractive Preloader --- */
+        #preloader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--bg-dark);
+            z-index: 10000;
+            display: flex; justify-content: center; align-items: center;
+            transition: opacity 0.7s ease, visibility 0.7s ease;
+            visibility: visible;
+        }
+        .loader-text { font-size: 2.5rem; font-weight: 700; }
+        .loader-text span {
+            display: inline-block;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        .loader-text span:nth-child(1) { animation-delay: 0.1s; }
+        .loader-text span:nth-child(2) { animation-delay: 0.2s; }
+        .loader-text span:nth-child(3) { animation-delay: 0.3s; }
+        .loader-text span:nth-child(4) { animation-delay: 0.4s; }
+        .loader-text span:nth-child(5) { animation-delay: 0.5s; color: var(--primary-accent); }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+
+        /* --- Animated Background --- */
+        #background-wrap {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            overflow: hidden; z-index: -1;
+        }
+        .particle {
+            position: absolute; border-radius: 50%;
+            background: var(--border-light);
+            animation: animate 25s linear infinite;
+        }
+        @keyframes animate {
+            0% { transform: translateY(100vh) scale(0); opacity: 0.7; }
+            100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+        }
+
+        /* --- Main Layout --- */
+        .app-container { width: 100%; max-width: 700px; margin: 0 auto; }
+        .app-header { text-align: center; padding-bottom: 2rem; animation: fadeInDown 0.8s ease-out; }
+        .app-header h1 { font-size: 2.2rem; font-weight: 700; }
+        .app-header p { font-size: 1.1rem; color: var(--text-secondary); }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Controls: Search & Filter --- */
+        .controls-container {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            animation: fadeInDown 0.8s ease-out 0.2s;
+            animation-fill-mode: both;
+            position: relative; /* Establishes a stacking context */
+            z-index: 100; /* Lifts the controls above the student list */
+        }
+        #search-input {
+            flex-grow: 1; padding: 0.9rem 1.2rem; background-color: var(--card-bg);
+            border: 1px solid var(--border-light); border-radius: 10px; color: var(--text-primary);
+            font-size: 1rem; transition: all 0.3s ease;
+        }
+        #search-input:focus {
+            outline: none; border-color: var(--primary-accent);
+            box-shadow: 0 0 15px rgba(0, 170, 255, 0.2);
+        }
+        .filter-container { position: relative; }
+        #filter-btn {
+            padding: 0.9rem 1.2rem; background-color: var(--card-bg); border: 1px solid var(--border-light);
+            border-radius: 10px; color: var(--text-primary); font-size: 1rem; cursor: pointer;
+            display: flex; align-items: center; gap: 0.5rem; transition: all 0.3s ease;
+        }
+        #filter-btn:hover, #filter-btn.active { background-color: var(--primary-accent); border-color: var(--primary-accent); }
+        #filter-options {
+            position: absolute; top: calc(100% + 10px); right: 0;
+            background-color: var(--card-bg); border: 1px solid var(--border-light);
+            border-radius: 10px; padding: 1rem;
+            width: 280px; box-shadow: var(--shadow);
+            transform: translateY(10px); opacity: 0; pointer-events: none;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        #filter-options.visible { transform: translateY(0); opacity: 1; pointer-events: auto; }
+        #filter-options label { font-size: 0.9rem; color: var(--text-secondary); }
+        #month-select {
+            width: 100%; padding: 0.7rem; margin-top: 0.5rem; margin-bottom: 1rem;
+            background-color: var(--bg-dark); border: 1px solid var(--border-light);
+            border-radius: 8px; color: var(--text-primary);
+        }
+        #clear-filter-btn {
+            width: 100%; padding: 0.6rem; background: transparent;
+            border: 1px solid var(--text-secondary); color: var(--text-secondary);
+            border-radius: 8px; cursor: pointer; transition: all 0.3s ease;
+        }
+        #clear-filter-btn:hover { background-color: var(--text-secondary); color: var(--bg-dark); }
+        
+        /* --- Student List (Accordion) --- */
+        .student-list { display: flex; flex-direction: column; gap: 1rem; }
+        .student-card {
+            background-color: var(--card-bg); border-radius: 12px; overflow: hidden;
+            border: 1px solid var(--border-light);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: fadeInUp 0.5s ease-out; animation-fill-mode: both;
+        }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .student-card.active { box-shadow: 0 0 25px rgba(0, 170, 255, 0.2); }
+        .student-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; cursor: pointer; user-select: none; transition: background-color 0.3s ease; }
+        .student-header:hover { background-color: rgba(255, 255, 255, 0.03); }
+        .student-name { font-size: 1.1rem; font-weight: 600; }
+        .chevron-icon { width: 24px; height: 24px; stroke: var(--text-secondary); transition: transform 0.4s ease; }
+        .student-card.active .chevron-icon { transform: rotate(90deg); stroke: var(--primary-accent); }
+        
+        /* --- Details Panel --- */
+        .student-details { max-height: 0; overflow: hidden; transition: max-height 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), padding 0.5s ease; padding: 0 1.5rem; }
+        .student-card.active .student-details { max-height: 800px; padding: 0 1.5rem 1.5rem 1.5rem; }
+        .details-content { animation: fadeIn 0.6s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .details-section { padding-top: 1.25rem; border-top: 1px solid var(--border-light); }
+        .details-section h3 { font-size: 1rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem; }
+        .fee-list { list-style: none; }
+        .fee-list li { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 0; border-bottom: 1px solid var(--border-light); font-size: 0.95rem; }
+        .fee-list li:last-child { border-bottom: none; }
+        .fee-list .description { font-weight: 500; }
+        .fee-list .amount { font-weight: 600; text-align: right; }
+        .fee-list .amount .method { font-size: 0.75rem; font-weight: 400; color: var(--text-secondary); display: block; }
+        .fee-list .amount.pending { color: var(--danger); }
+        .fee-list .amount.paid { color: var(--success); }
+        .no-pending { color: var(--success); font-style: italic; }
+        .join-date { color: var(--text-secondary); font-style: italic; font-size: 0.9rem; margin-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div id="preloader">
+        <div class="loader-text"><span>A</span><span>-</span><span>O</span><span>N</span><span>E</span></div>
+    </div>
+    <div id="background-wrap"></div>
+
+    <div class="app-container">
+        <header class="app-header">
+            <h1>Admin Dashboard</h1>
+            <p>A-One Tuition Centre</p>
+        </header>
+
+        <main>
+            <div class="controls-container">
+                <input type="text" id="search-input" placeholder="🔍 Search for a student...">
+                <div class="filter-container">
+                    <button id="filter-btn">
+                        Filter
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                    </button>
+                    <div id="filter-options">
+                        <label for="month-select">Show students with pending fees for:</label>
+                        <select id="month-select">
+                            <option value="">-- Select Month --</option>
+                            </select>
+                        <button id="clear-filter-btn">Clear Filter</button>
+                    </div>
+                </div>
+            </div>
+            <div class="student-list" id="student-list"></div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const universalPendingMonths = [
+                { description: "Monthly Fee (October 2025)", amount: 700 },
+                { description: "Monthly Fee (November 2025)", amount: 700 },
+                { description: "Monthly Fee (December 2025)", amount: 700 },
+                { description: "Monthly Fee (January 2026)", amount: 700 },
+                { description: "Monthly Fee (February 2026)", amount: 700 },
+                { description: "Monthly Fee (March 2026)", amount: 700 },
+            ];
+
+            const studentDatabase = {
+                "leo": { name: "Leo", joinDate: "15-08-2025", pendingFees: [...universalPendingMonths], paymentHistory: [{ date: "15-10-2025", description: "Monthly Fee (September)", amount: 700, method: "UPI", teacher: "Jincy Tr" }] },
+                "geo": { name: "Geo", joinDate: "15-08-2025", pendingFees: [...universalPendingMonths], paymentHistory: [{ date: "15-10-2025", description: "Monthly Fee (September)", amount: 700, method: "UPI", teacher: "Jincy Tr" }] },
+                "ephrem": { name: "Ephrem", joinDate: "15-08-2025", pendingFees: [...universalPendingMonths], paymentHistory: [{ date: "15-10-2025", description: "Monthly Fee (September)", amount: 700, method: "UPI", teacher: "Jincy Tr" }] },
+                "drupajith": { name: "Drupajith", joinDate: "15-08-2025", pendingFees: [{ description: "Monthly Fee (September 2025)", amount: 700 }, ...universalPendingMonths], paymentHistory: [] },
+                "angalo": { name: "Angalo", joinDate: "15-08-2025", pendingFees: [{ description: "Monthly Fee (September 2025)", amount: 350 }, ...universalPendingMonths], paymentHistory: [{ date: "15-10-2025", description: "Monthly Fee (September)", amount: 350, method: "Cash", teacher: "Teena Tr" }] },
+                "jonath": { name: "Jonath", joinDate: "15-08-2025", pendingFees: [...universalPendingMonths], paymentHistory: [{ date: "15-10-2025", description: "Monthly Fee (September)", amount: 700, method: "UPI", teacher: "Teena Tr" }] },
+                "jiya": { name: "Jiya", joinDate: "15-08-2025", pendingFees: [...universalPendingMonths], paymentHistory: [{ date: "15-10-2025", description: "Monthly Fee (September)", amount: 700, method: "UPI", teacher: "Teena Tr" }] },
+                "amegh": { name: "Amegh", joinDate: "15-08-2025", pendingFees: [...universalPendingMonths], paymentHistory: [{ date: "15-10-2025", description: "Monthly Fee (September)", amount: 700, method: "UPI", teacher: "Teena Tr" }] },
+                "izza": { name: "Izza", joinDate: "15-08-2025", pendingFees: [{ description: "Monthly Fee (September 2025)", amount: 700 }, ...universalPendingMonths], paymentHistory: [] },
+                "ganashyam": { name: "Ganashyam", joinDate: "15-08-2025", pendingFees: [{ description: "Monthly Fee (September 2025)", amount: 700 }, ...universalPendingMonths], paymentHistory: [] },
+                "dhanadarsh": { name: "Dhanadarsh", joinDate: "15-08-2025", pendingFees: [{ description: "Monthly Fee (September 2025)", amount: 700 }, ...universalPendingMonths], paymentHistory: [] }
+            };
+
+            const studentListContainer = document.getElementById('student-list');
+            const searchInput = document.getElementById('search-input');
+            const preloader = document.getElementById('preloader');
+            const filterBtn = document.getElementById('filter-btn');
+            const filterOptions = document.getElementById('filter-options');
+            const monthSelect = document.getElementById('month-select');
+            const clearFilterBtn = document.getElementById('clear-filter-btn');
+            
+            window.addEventListener('load', () => {
+                setTimeout(() => {
+                    preloader.style.opacity = '0';
+                    preloader.style.visibility = 'hidden';
+                }, 1000);
+            });
+
+            function renderStudentList() {
+                let html = ''; let delay = 0;
+                for (const studentId in studentDatabase) {
+                    const student = studentDatabase[studentId];
+                    html += `<div class="student-card" data-student-id="${studentId}" data-student-name="${student.name.toLowerCase()}" style="animation-delay: ${delay}s">
+                            <div class="student-header"><span class="student-name">${student.name}</span><svg class="chevron-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></div>
+                            <div class="student-details"></div></div>`;
+                    delay += 0.05;
+                }
+                studentListContainer.innerHTML = html;
+            }
+
+            function populateFilterOptions() {
+                const months = new Set();
+                Object.values(studentDatabase).forEach(student => {
+                    student.pendingFees.forEach(fee => {
+                        const monthMatch = fee.description.match(/\((.*?)\)/);
+                        if (monthMatch) months.add(monthMatch[1]);
+                    });
+                });
+                const sortedMonths = Array.from(months).sort();
+                sortedMonths.forEach(month => {
+                    const option = document.createElement('option');
+                    option.value = month; option.textContent = month;
+                    monthSelect.appendChild(option);
+                });
+            }
+
+            function attachEventListeners() {
+                studentListContainer.addEventListener('click', e => {
+                    const header = e.target.closest('.student-header');
+                    if (!header) return;
+                    const card = header.parentElement;
+                    document.querySelectorAll('.student-card.active').forEach(activeCard => {
+                        if (activeCard !== card) activeCard.classList.remove('active');
+                    });
+                    card.classList.toggle('active');
+                    const detailsPanel = card.querySelector('.student-details');
+                    if (card.classList.contains('active') && detailsPanel.innerHTML.trim() === '') {
+                        populateDetails(detailsPanel, studentDatabase[card.dataset.studentId]);
+                    }
+                });
+
+                searchInput.addEventListener('input', applyFilters);
+                monthSelect.addEventListener('change', applyFilters);
+
+                filterBtn.addEventListener('click', () => {
+                    filterOptions.classList.toggle('visible');
+                    filterBtn.classList.toggle('active');
+                });
+                
+                document.addEventListener('click', (e) => {
+                    if (!filterBtn.contains(e.target) && !filterOptions.contains(e.target)) {
+                        filterOptions.classList.remove('visible');
+                        filterBtn.classList.remove('active');
+                    }
+                });
+
+                clearFilterBtn.addEventListener('click', () => {
+                    monthSelect.value = '';
+                    searchInput.value = '';
+                    applyFilters();
+                    filterOptions.classList.remove('visible');
+                    filterBtn.classList.remove('active');
+                });
+            }
+            
+            function applyFilters() {
+                const searchQuery = searchInput.value.toLowerCase();
+                const monthQuery = monthSelect.value;
+
+                document.querySelectorAll('.student-card').forEach(card => {
+                    const studentId = card.dataset.studentId;
+                    const studentName = card.dataset.studentName;
+                    const studentData = studentDatabase[studentId];
+                    const nameMatch = studentName.includes(searchQuery);
+                    const monthMatch = monthQuery ? studentData.pendingFees.some(fee => fee.description.includes(monthQuery)) : true;
+                    card.style.display = (nameMatch && monthMatch) ? 'block' : 'none';
+                });
+            }
+            
+            function populateDetails(detailsPanel, studentData) {
+                let pendingHtml = studentData.pendingFees.length > 0
+                    ? studentData.pendingFees.map(fee => `<li><span class="description">${fee.description}</span><span class="amount pending">₹${fee.amount.toFixed(2)}</span></li>`).join('')
+                    : `<li><span class="description no-pending">All dues cleared.</span></li>`;
+                
+                const historyHtml = studentData.paymentHistory.map(item => {
+                    const teacherInfo = item.teacher ? ` to ${item.teacher}` : '';
+                    return `<li><span class="description">${item.date}</span><span class="amount paid">₹${item.amount.toFixed(2)}<span class="method">(${item.method}${teacherInfo})</span></span></li>`
+                }).join('');
+                
+                detailsPanel.innerHTML = `<div class="details-content">
+                    <div class="details-section"><h3>Pending Fees</h3><ul class="fee-list">${pendingHtml}</ul></div>
+                    <div class="details-section" style="margin-top: 1.5rem;"><h3>Payment History</h3><ul class="fee-list">${historyHtml || `<li>No payment history.</li>`}</ul></div>
+                    <p class="join-date">Student Joined: ${studentData.joinDate}</p>
+                </div>`;
+            }
+            
+            function createParticles() {
+                const particleContainer = document.getElementById('background-wrap');
+                const particleCount = 20;
+                for (let i = 0; i < particleCount; i++) {
+                    const p = document.createElement('div'); p.className = 'particle';
+                    const s = Math.random() * 5 + 1; p.style.width = `${s}px`; p.style.height = `${s}px`;
+                    p.style.left = `${Math.random() * 100}%`;
+                    p.style.animationDuration = `${Math.random() * 15 + 15}s`;
+                    p.style.animationDelay = `${Math.random() * 10}s`;
+                    particleContainer.appendChild(p);
+                }
+            }
+            
+            renderStudentList();
+            populateFilterOptions();
+            attachEventListeners();
+            createParticles();
+        });
+    </script>
+</body>
+</html>
